@@ -1,370 +1,170 @@
-App.js
-import React, { useState } from 'react';
-import { Container, CssBaseline, Typography, Box } from '@mui/material';
-import FileUploader from './components/FileUploader';
-import ColumnSelector from './components/ColumnSelector';
-import DataDisplay from './components/DataDisplay';
 
-function App() {
-  const [csvData, setCsvData] = useState(null);
-  const [columns, setColumns] = useState([]);
-  const [selectedColumns, setSelectedColumns] = useState([]);
-  const [displayData, setDisplayData] = useState(null);
+1. Project Contributions: RCS UL Migration
 
-  const handleFileUpload = (data, columns) => {
-    setCsvData(data);
-    setColumns(columns);
-    setSelectedColumns([]);
-    setDisplayData(null);
-  };
+A. Unit Testing & Functional Assurance
 
-  const handleColumnSelect = (selected) => {
-    setSelectedColumns(selected);
-  };
+Successfully completed unit testing for:
 
-  const handleSave = () => {
-    if (selectedColumns.length === 0) return;
-    
-    const filteredData = csvData.map(row => {
-      const filteredRow = {};
-      selectedColumns.forEach(col => {
-        filteredRow[col] = row[col];
-      });
-      return filteredRow;
-    });
-    
-    setDisplayData(filteredData);
-  };
+Research tab with 7 components.
 
-  return (
-    <>
-      <CssBaseline />
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold', mb: 4 }}>
-          CSV Data Explorer
-        </Typography>
-        
-        <Box sx={{ 
-          backgroundColor: 'background.paper', 
-          borderRadius: 2, 
-          boxShadow: 1, 
-          p: 4, 
-          mb: 4 
-        }}>
-          <FileUploader onFileUpload={handleFileUpload} />
-        </Box>
+Inquiry tab with 7 components.
 
-        {columns.length > 0 && (
-          <Box sx={{ 
-            backgroundColor: 'background.paper', 
-            borderRadius: 2, 
-            boxShadow: 1, 
-            p: 4, 
-            mb: 4 
-          }}>
-            <ColumnSelector 
-              columns={columns} 
-              onSelect={handleColumnSelect} 
-              onSave={handleSave} 
-            />
-          </Box>
-        )}
 
-        {displayData && (
-          <Box sx={{ 
-            backgroundColor: 'background.paper', 
-            borderRadius: 2, 
-            boxShadow: 1, 
-            p: 4 
-          }}>
-            <DataDisplay data={displayData} />
-          </Box>
-        )}
-      </Container>
-    </>
-  );
-}
+Extended unit testing coverage to include exception handling in Inquiry screens, especially post-Redux integration.
 
-export default App;
+Used Jest for test cases to ensure coverage and reliability for UI components.
+
+
+B. UI Development
+
+Developed new UI screens under the "Processing" section using WFRIA (React Framework) and TypeScript.
+
+Ensured feature parity with legacy application by replicating all business functionalities.
+
+Implemented dynamic title rendering across screens, replacing the previously static titles.
+
+
+C. CI/CD and Build Management
+
+Resolved multiple Jenkins build errors during pipeline execution.
+
+Coordinated with Karthee to update and manage the Shared Library version for CI builds.
+
+Actively participated in release management, ensuring timely deployments to DEV, SIT, and UAT environments across Manassas and Lewisville data centers.
+
+Took a proactive role in approving and reviewing PRs to minimize bugs and maintain code quality.
+
+
+D. Code Quality (SonarQube)
+
+Resolved all critical and major issues highlighted by SonarQube, improving the maintainability and security posture of the codebase.
+
+
+E. Defect Resolution
+
+Addressed and resolved 200+ defects raised by Mitesh during manual testing.
+
+Defects ranged across functional, UI, and integration issues, demonstrating a strong focus on quality and end-user experience.
+
+
+F. Additional Functional Enhancements
+
+Implemented Print and Export to Excel functionality for Account Balance Inquiry module to support operational requirements.
 
 
 
+---
+
+2. Service Implementation
+
+A. MemoPost Service
+
+Created a dedicated repository under apps-RCS for MemoPost service.
+
+Implemented using Spring Boot 3 with JDK 17.
+
+Published data from RCS-Core to Kafka, enabling ELM (Enhanced Liquidity Management) systems to consume the feed.
+
+Coordinated with ELM team to validate that account balance data is accurately reflected post-ingestion.
+
+
+B. Posting Service
+
+Developed a common Posting Service in RCS-Common for integration with IBM MQ.
+
+Raised and tracked Jira Service Management request for a new MQ queue.
+
+Successfully implemented and validated connectivity for seamless data flow across core services.
 
 
 
-FileUploader.js
-import React from 'react';
-import { Button, Box, Typography } from '@mui/material';
-import { Upload as UploadIcon } from '@mui/icons-material';
-import Papa from 'papaparse';
+---
 
-const FileUploader = ({ onFileUpload }) => {
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+3. Documentation & Knowledge Sharing
 
-    Papa.parse(file, {
-      header: true,
-      complete: (results) => {
-        const columns = results.meta.fields || [];
-        onFileUpload(results.data, columns);
-      },
-      error: (error) => {
-        console.error('Error parsing CSV:', error);
-        alert('Error parsing CSV file. Please check the file format.');
-      }
-    });
-  };
+Analyzed and documented the AST process in EMTS-INTERFACE for transparency and reuse.
 
-  return (
-    <Box sx={{ textAlign: 'center' }}>
-      <Typography variant="h5" component="h2" gutterBottom>
-        Upload CSV File
-      </Typography>
-      <Typography variant="body1" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
-        Select a CSV file to analyze its contents
-      </Typography>
-      <Button
-        variant="contained"
-        component="label"
-        startIcon={<UploadIcon />}
-        size="large"
-        sx={{
-          py: 2,
-          px: 4,
-          borderRadius: 2,
-          textTransform: 'none',
-          fontSize: '1.1rem'
-        }}
-      >
-        Choose File
-        <input
-          type="file"
-          hidden
-          accept=".csv"
-          onChange={handleFileChange}
-        />
-      </Button>
-    </Box>
-  );
-};
+Created and updated Confluence pages for all major knowledge transfer (KT) sessions and walkthroughs.
 
-export default FileUploader;
+Conducted KT sessions on:
+
+UI tech stack and setup.
+
+Jest unit testing.
+
+OCP Harness deployment process.
+
+
+Provided onboarding support and continuous assistance to new team members to ensure minimal BAU disruption.
 
 
 
-ColumnSelector.js
+---
+
+4. Innovation and R&D Initiatives
+
+A. Tech Fridays (Knowledge Evangelism)
+
+Podcast with Rajulu Nelluri on Generative AI in Banking: Discussed its potential, use cases, and impact.
+
+Podcast with Shilpa Shivapuram on Docling: Explored how AI is transforming document intelligence.
+
+Hosted AI-Pragnya session with Global Hackathon winners to showcase their journey and winning AI solution.
 
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  List, 
-  ListItem, 
-  Checkbox, 
-  ListItemText, 
-  Button,
-  Chip,
-  Divider
-} from '@mui/material';
-import { Save as SaveIcon } from '@mui/icons-material';
+B. Global Hackathon Participation
 
-const ColumnSelector = ({ columns, onSelect, onSave }) => {
-  const [selected, setSelected] = useState([]);
+Participated in the AI-driven Hackathon focused on Entity Intelligence and Risk Analysis.
 
-  useEffect(() => {
-    setSelected([]);
-  }, [columns]);
+Key solution features:
 
-  const handleToggle = (column) => () => {
-    const currentIndex = selected.indexOf(column);
-    const newSelected = [...selected];
-
-    if (currentIndex === -1) {
-      newSelected.push(column);
-    } else {
-      newSelected.splice(currentIndex, 1);
-    }
-
-    setSelected(newSelected);
-    onSelect(newSelected);
-  };
-
-  return (
-    <Box>
-      <Typography variant="h5" component="h2" gutterBottom>
-        Select Columns to Display
-      </Typography>
-      <Typography variant="body1" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
-        Choose the columns you want to view from the CSV file
-      </Typography>
-
-      {selected.length > 0 && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            Selected Columns:
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {selected.map((column) => (
-              <Chip 
-                key={column} 
-                label={column} 
-                onDelete={handleToggle(column)} 
-                color="primary"
-              />
-            ))}
-          </Box>
-        </Box>
-      )}
-
-      <Divider sx={{ my: 2 }} />
-
-      <List dense sx={{ 
-        maxHeight: 300, 
-        overflow: 'auto', 
-        border: '1px solid #eee', 
-        borderRadius: 1,
-        mb: 3
-      }}>
-        {columns.map((column) => (
-          <ListItem
-            key={column}
-            button
-            onClick={handleToggle(column)}
-            sx={{
-              '&:hover': {
-                backgroundColor: 'action.hover'
-              }
-            }}
-          >
-            <Checkbox
-              edge="start"
-              checked={selected.indexOf(column) !== -1}
-              tabIndex={-1}
-              disableRipple
-            />
-            <ListItemText primary={column} />
-          </ListItem>
-        ))}
-      </List>
-
-      <Button
-        variant="contained"
-        color="primary"
-        startIcon={<SaveIcon />}
-        onClick={onSave}
-        disabled={selected.length === 0}
-        size="large"
-        sx={{
-          py: 1.5,
-          px: 4,
-          borderRadius: 2,
-          textTransform: 'none',
-          fontSize: '1.1rem'
-        }}
-      >
-        Display Selected Data
-      </Button>
-    </Box>
-  );
-};
-
-export default ColumnSelector;
+1. Parsed transaction data using Google Gemini.
 
 
+2. Entity extraction/enrichment using OFAC, SEC EDGAR, and Wikidata APIs.
 
-DataDisplay.js
-import React from 'react';
-import { 
-  Box, 
-  Typography, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow,
-  Paper
-} from '@mui/material';
 
-const DataDisplay = ({ data }) => {
-  if (!data || data.length === 0) return null;
+3. Built XGBoost ML model to predict fraud and compliance risks.
 
-  const columns = Object.keys(data[0]);
 
-  return (
-    <Box>
-      <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 3 }}>
-        Displaying Selected Data
-      </Typography>
-      
-      <TableContainer component={Paper} sx={{ maxHeight: 500, overflow: 'auto' }}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              {columns.map((column) => (
-                <TableCell key={column} sx={{ fontWeight: 'bold' }}>
-                  {column}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {data.map((row, index) => (
-              <TableRow key={index}>
-                {columns.map((column) => (
-                  <TableCell key={`${index}-${column}`}>
-                    {row[column] || '-'}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
-  );
-};
+4. Performed real-time news sentiment analysis using Gemini for dynamic risk indicators.
 
-export default DataDisplay;
+
+5. Generated comprehensive risk reports integrating transaction, ML, and news insights.
 
 
 
 
-Index.js
 
-import React from 'react';
-import ReactDOM from 'react-dom';
-import App from './App';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+---
 
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-    background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-  },
-});
+5. POCs & Innovation
 
-ReactDOM.render(
-  <React.StrictMode>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <App />
-    </ThemeProvider>
-  </React.StrictMode>,
-  document.getElementById('root')
-);
+Developed screens for a Patent site using WFRIA with SharePoint as backend to enable role-based access.
+
+Created a file upload application allowing users to upload CSVs and select relevant columns for display.
+
+Tech Stack: Material UI, Spring Boot, and MongoDB.
+
+
+
+
+---
+
+6. Innovation Portal Development
+
+Collaborated with Shalini to build an Innovation Portal on Confluence.
+
+Incorporated feedback iteratively and enhanced the portal to align with innovation tracking requirements.
+
+
+
+---
+
+7. Support Management & Team Collaboration
+
+Actively helped new members with successful onboarding and training.
+
+Provided ongoing assistance to ensure zero disruption in BAU activities.
+
+Conducted support sessions for US RCS 2.0 team, addressing technical and process challenges.
