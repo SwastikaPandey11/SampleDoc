@@ -1,24 +1,61 @@
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import { HomePage } from './pages/HomePage';
+import { useState, useEffect } from 'react';
+import { mqApi } from '../../api/mqApi';
+import { QueueManager, Queue, SendMessageRequest, MessageStatus } from './types';
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
+export const useMessageSender = (initialState?: Partial<MessageStatus>) => {
+  const [queueManagers, setQueueManagers] = useState<QueueManager[]>([]);
+  const [queues, setQueues] = useState<Queue[]>([]);
+  const [status, setStatus] = useState<MessageStatus>({
+    isLoading: false,
+    error: null,
+    success: null,
+    ...initialState
+  });
 
-function App() {
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <HomePage />
-    </ThemeProvider>
-  );
-}
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setStatus(prev => ({ ...prev, isLoading: true }));
+        const [managers, queues] = await Promise.all([
+          mqApi.getQueueManagers(),
+          mqApi.getQueues()
+        ]);
+        setQueueManagers(managers);
+        setQueues(queues);
+      } catch (err) {
+        setStatus(prev => ({ 
+          ...prev, 
+          error: 'Failed to load queue data',
+          success: null
+        }));
+      } finally {
+        setStatus(prev => ({ ...prev, isLoading: false }));
+      }
+    };
 
-export default App;
+    fetchData();
+  }, []);
+
+  const sendMessage = async (request: SendMessageRequest) => {
+    try {
+      setStatus({ isLoading: true, error: null, success: null });
+      await mqApi.sendMessage(request);
+      setStatus({ isLoading: false, error: null, success: 'Message sent successfully!' });
+    } catch (err) {
+      setStatus({ 
+        isLoading: false, 
+        error: err instanceof Error ? err.message : 'Failed to send message',
+        success: null
+      });
+      throw err;
+    }
+  };
+
+  return {
+    queueManagers,
+    queues,
+    status,
+    sendMessage,
+    setStatus
+  };
+};
