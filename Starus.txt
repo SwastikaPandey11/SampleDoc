@@ -1,84 +1,22 @@
-import { useState } from 'react';
-import { Button, TextField, Box, Typography, Paper } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import { QueueSelector } from '../../components/mq/QueueSelector';
-import { MessageStatusAlert } from '../../components/mq/MessageStatusAlert';
-import { useMessageSender } from './useMessageSender';
+import axios from 'axios';
+import { QueueManager, Queue, SendMessageRequest } from '../types/mqTypes';
 
-export const MessageSenderForm = () => {
-  const { queueManagers, queues, status, sendMessage } = useMessageSender();
-  const [message, setMessage] = useState('');
-  const [selectedQueueManager, setSelectedQueueManager] = useState('');
-  const [selectedQueue, setSelectedQueue] = useState('');
+const api = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api',
+});
 
-  const filteredQueues = queues.filter(q => q.managerId === selectedQueueManager);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await sendMessage({
-      queueManagerId: selectedQueueManager,
-      queueId: selectedQueue,
-      message
-    });
-    setMessage('');
-  };
-
-  return (
-    <Paper elevation={3} sx={{ p: 4 }}>
-      <Typography variant="h5" gutterBottom>
-        Send Message to IBM MQ
-      </Typography>
-      
-      <MessageStatusAlert
-        isLoading={status.isLoading}
-        error={status.error}
-        success={status.success}
-      />
-      
-      <Box component="form" onSubmit={handleSubmit}>
-        <QueueSelector
-          label="Queue Manager"
-          value={selectedQueueManager}
-          options={queueManagers.map(qm => ({
-            id: qm.id,
-            name: `${qm.name} (${qm.host}:${qm.port})`
-          }))}
-          onChange={setSelectedQueueManager}
-        />
-        
-        <QueueSelector
-          label="Queue"
-          value={selectedQueue}
-          options={filteredQueues.map(q => ({
-            id: q.id,
-            name: q.name
-          }))}
-          onChange={setSelectedQueue}
-          disabled={!selectedQueueManager}
-          sx={{ mt: 2 }}
-        />
-        
-        <TextField
-          label="Message"
-          multiline
-          rows={6}
-          fullWidth
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          sx={{ mt: 2, mb: 2 }}
-          required
-        />
-        
-        <Button
-          type="submit"
-          variant="contained"
-          size="large"
-          endIcon={<SendIcon />}
-          disabled={status.isLoading || !selectedQueueManager || !selectedQueue || !message}
-        >
-          Send Message
-        </Button>
-      </Box>
-    </Paper>
-  );
+export const mqApi = {
+  getQueueManagers: async (): Promise<QueueManager[]> => {
+    const response = await api.get('/managers');
+    return response.data;
+  },
+  
+  getQueues: async (): Promise<Queue[]> => {
+    const response = await api.get('/queues');
+    return response.data;
+  },
+  
+  sendMessage: async (request: SendMessageRequest): Promise<void> => {
+    await api.post('/messages', request);
+  }
 };
