@@ -1,35 +1,24 @@
-import React from 'react';
-import { Alert, LinearProgress, Box } from '@mui/material';
+import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { HomePage } from './pages/HomePage';
 
-interface MessageStatusAlertProps {
-  error: string | null;
-  success: string | null;
-  isLoading: boolean;
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2',
+    },
+    secondary: {
+      main: '#dc004e',
+    },
+  },
+});
+
+function App() {
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <HomePage />
+    </ThemeProvider>
+  );
 }
 
-export const MessageStatusAlert: React.FC<MessageStatusAlertProps> = ({
-  error,
-  success,
-  isLoading
-}) => {
-  return (
-    <Box sx={{ mb: 2 }}>
-      {/* Loading indicator */}
-      {isLoading && <LinearProgress sx={{ mb: 2 }} />}
-      
-      {/* Error alert */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      
-      {/* Success alert */}
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
-    </Box>
-  );
-};
+export default App;
