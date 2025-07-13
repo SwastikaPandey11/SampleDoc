@@ -1,0 +1,35 @@
+import React from 'react';
+import { Alert, LinearProgress, Box } from '@mui/material';
+
+interface MessageStatusAlertProps {
+  error: string | null;
+  success: string | null;
+  isLoading: boolean;
+}
+
+export const MessageStatusAlert: React.FC<MessageStatusAlertProps> = ({
+  error,
+  success,
+  isLoading
+}) => {
+  return (
+    <Box sx={{ mb: 2 }}>
+      {/* Loading indicator */}
+      {isLoading && <LinearProgress sx={{ mb: 2 }} />}
+      
+      {/* Error alert */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      
+      {/* Success alert */}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
+    </Box>
+  );
+};
