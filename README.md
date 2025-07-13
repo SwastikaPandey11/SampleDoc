@@ -1,249 +1,571 @@
-import React from 'react';
-import { FormControl, InputLabel, Select, MenuItem, Box } from '@mui/material';
-import { useMQConnection } from '../../../hooks/useMQConnection';
+# Modularized Full-Stack IBM MQ Message Sender Application
 
-export const MQConnectionForm = () => {
-  const {
-    queueManagers,
-    queues,
-    selectedManager,
-    selectedQueue,
-    loading,
-    handleManagerChange,
-    handleQueueChange
-  } = useMQConnection();
+I'll restructure the application into clean, modular components for better maintainability and scalability. Here's the improved architecture:
 
-  return (
-    <Box display="flex" gap={2} mb={3}>
-      <FormControl fullWidth>
-        <InputLabel>Queue Manager</InputLabel>
-        <Select
-          value={selectedManager}
-          onChange={handleManagerChange}
-          label="Queue Manager"
-        >
-          {queueManagers.map((qm) => (
-            <MenuItem key={qm} value={qm}>{qm}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      
-      <FormControl fullWidth>
-        <InputLabel>Queue</InputLabel>
-        <Select
-          value={selectedQueue}
-          onChange={handleQueueChange}
-          label="Queue"
-          disabled={!selectedManager || loading}
-        >
-          {queues.map((q) => (
-            <MenuItem key={q} value={q}>{q}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-    </Box>
-  );
+## Frontend Modular Structure
+
+```
+src/
+├── api/                  # API service layer
+│   ├── mqApi.ts          # IBM MQ specific API calls
+│   └── index.ts          # API exports
+├── components/           # Reusable UI components
+│   ├── layout/           # Layout components
+│   │   ├── Header.tsx
+│   │   └── MainContainer.tsx
+│   └── mq/               # IBM MQ specific components
+│       ├── QueueSelector.tsx
+│       ├── MessageEditor.tsx
+│       └── MessageStatusAlert.tsx
+├── features/             # Feature-based modules
+│   └── messageSender/    # Message sending feature
+│       ├── MessageSenderForm.tsx
+│       ├── useMessageSender.ts  # Custom hook for business logic
+│       └── types.ts      # Type definitions
+├── pages/                # Page components
+│   └── HomePage.tsx      # Main application page
+├── App.tsx               # Main app component
+└── index.tsx             # Entry point
+```
+
+## Backend Modular Structure
+
+```
+src/main/java/com/example/mqsender/
+├── config/               # Configuration classes
+│   ├── MqConfig.java     # IBM MQ configuration
+│   └── WebConfig.java    # Web/API configuration
+├── controller/           # API controllers
+│   ├── MqManagerController.java
+│   ├── MqQueueController.java
+│   └── MqMessageController.java
+├── model/                # Data models
+│   ├── dto/              # DTOs for API communication
+│   ├── entity/           # MongoDB entities
+│   └── enums/            # Enumerations
+├── repository/           # Data repositories
+│   ├── MqManagerRepository.java
+│   └── MqQueueRepository.java
+├── service/              # Business logic
+│   ├── impl/             # Service implementations
+│   └── MqService.java    # Service interface
+└── exception/            # Exception handling
+    ├── MqException.java
+    └── GlobalExceptionHandler.java
+```
+
+## Updated Frontend Implementation
+
+### 1. API Layer (`src/api/mqApi.ts`)
+
+```typescript
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api',
+});
+
+export interface QueueManager {
+  id: string;
+  name: string;
+  host: string;
+  port: number;
+  channel: string;
+}
+
+export interface Queue {
+  id: string;
+  name: string;
+  managerId: string;
+}
+
+export interface SendMessageRequest {
+  queueManagerId: string;
+  queueId: string;
+  message: string;
+}
+
+export const mqApi = {
+  getQueueManagers: async (): Promise<QueueManager[]> => {
+    const response = await api.get('/managers');
+    return response.data;
+  },
+  
+  getQueues: async (): Promise<Queue[]> => {
+    const response = await api.get('/queues');
+    return response.data;
+  },
+  
+  sendMessage: async (request: SendMessageRequest): Promise<void> => {
+    await api.post('/messages', request);
+  }
 };
+```
 
+### 2. Custom Hook (`src/features/messageSender/useMessageSender.ts`)
 
-
-//useMQConnection.ts
+```typescript
 import { useState, useEffect } from 'react';
-import { getQueueManagers, getQueues } from '../services/mqService';
+import { mqApi, QueueManager, Queue } from '../../api/mqApi';
 
-export const useMQConnection = () => {
-  const [queueManagers, setQueueManagers] = useState<string[]>([]);
-  const [queues, setQueues] = useState<string[]>([]);
-  const [selectedManager, setSelectedManager] = useState<string>('');
-  const [selectedQueue, setSelectedQueue] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-
+export const useMessageSender = () => {
+  const [queueManagers, setQueueManagers] = useState<QueueManager[]>([]);
+  const [queues, setQueues] = useState<Queue[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   useEffect(() => {
-    const fetchQueueManagers = async () => {
+    const fetchData = async () => {
       try {
-        const managers = await getQueueManagers();
+        setIsLoading(true);
+        const [managers, queues] = await Promise.all([
+          mqApi.getQueueManagers(),
+          mqApi.getQueues()
+        ]);
         setQueueManagers(managers);
-      } catch (error) {
-        console.error('Failed to fetch queue managers:', error);
-      }
-    };
-    fetchQueueManagers();
-  }, []);
-
-  useEffect(() => {
-    const fetchQueues = async () => {
-      if (!selectedManager) return;
-      
-      try {
-        setLoading(true);
-        const queueList = await getQueues(selectedManager);
-        setQueues(queueList);
-        setSelectedQueue('');
-      } catch (error) {
-        console.error('Failed to fetch queues:', error);
+        setQueues(queues);
+      } catch (err) {
+        setError('Failed to load queue data');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
-    fetchQueues();
-  }, [selectedManager]);
-
-  const handleManagerChange = (manager: string) => {
-    setSelectedManager(manager);
+    
+    fetchData();
+  }, []);
+  
+  const sendMessage = async (request: {
+    queueManagerId: string;
+    queueId: string;
+    message: string;
+  }): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await mqApi.sendMessage(request);
+    } catch (err) {
+      setError('Failed to send message');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
-
-  const handleQueueChange = (queue: string) => {
-    setSelectedQueue(queue);
-  };
-
+  
   return {
     queueManagers,
     queues,
-    selectedManager,
-    selectedQueue,
-    loading,
-    handleManagerChange,
-    handleQueueChange
+    isLoading,
+    error,
+    sendMessage
   };
 };
+```
 
+### 3. Queue Selector Component (`src/components/mq/QueueSelector.tsx`)
 
-
-
-//mqService.ts
-import axios from './apiClient';
-
-export const getQueueManagers = async (): Promise<string[]> => {
-  const response = await axios.get('/mq/managers');
-  return response.data;
-};
-
-export const getQueues = async (manager: string): Promise<string[]> => {
-  const response = await axios.get('/mq/queues', {
-    params: { manager }
-  });
-  return response.data;
-};
-
-export const sendMessage = async (
-  manager: string,
-  queue: string,
-  message: string
-): Promise<void> => {
-  await axios.post('/mq/send', message, {
-    params: { manager, queue },
-    headers: { 'Content-Type': 'text/plain' }
-  });
-};
-
-
-//homePage
+```typescript
 import React from 'react';
-import { Box, Button, Paper, Typography } from '@mui/material';
-import { MQConnectionForm } from '../../components/MQConnectionForm';
-import { MessageEditor } from '../../components/MessageEditor';
-import { StatusAlert } from '../../components/StatusAlert';
-import { useMessageSender } from '../../hooks/useMessageSender';
+import { FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 
-export const HomePage = () => {
-  const {
-    message,
-    setMessage,
-    error,
-    success,
-    loading,
-    handleSend,
-    clearStatus
-  } = useMessageSender();
+interface QueueSelectorProps {
+  label: string;
+  value: string;
+  options: Array<{ id: string; name: string }>;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}
+
+export const QueueSelector: React.FC<QueueSelectorProps> = ({
+  label,
+  value,
+  options,
+  onChange,
+  disabled = false
+}) => {
+  const handleChange = (event: SelectChangeEvent) => {
+    onChange(event.target.value as string);
+  };
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        IBM MQ Message Sender
+    <FormControl fullWidth>
+      <InputLabel>{label}</InputLabel>
+      <Select
+        value={value}
+        label={label}
+        onChange={handleChange}
+        disabled={disabled}
+      >
+        {options.map((option) => (
+          <MenuItem key={option.id} value={option.id}>
+            {option.name}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
+};
+```
+
+### 4. Message Sender Form (`src/features/messageSender/MessageSenderForm.tsx`)
+
+```typescript
+import React, { useState } from 'react';
+import { Button, TextField, Box, Typography } from '@mui/material';
+import SendIcon from '@mui/icons-material/Send';
+import { QueueSelector } from '../../components/mq/QueueSelector';
+import { MessageStatusAlert } from '../../components/mq/MessageStatusAlert';
+import { useMessageSender } from './useMessageSender';
+
+export const MessageSenderForm: React.FC = () => {
+  const { queueManagers, queues, isLoading, error, sendMessage } = useMessageSender();
+  const [message, setMessage] = useState('');
+  const [selectedQueueManager, setSelectedQueueManager] = useState('');
+  const [selectedQueue, setSelectedQueue] = useState('');
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const filteredQueues = queues.filter(q => q.managerId === selectedQueueManager);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccess(null);
+    
+    try {
+      await sendMessage({
+        queueManagerId: selectedQueueManager,
+        queueId: selectedQueue,
+        message
+      });
+      setSuccess('Message sent successfully!');
+      setMessage('');
+    } catch (err) {
+      // Error is already handled in the hook
+    }
+  };
+
+  return (
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+      <Typography variant="h5" gutterBottom>
+        Send Message to IBM MQ
       </Typography>
       
-      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-        <MQConnectionForm />
-        
-        <MessageEditor 
-          message={message}
-          onChange={setMessage}
-        />
-        
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSend}
-          disabled={loading}
-        >
-          Send Message
-        </Button>
-      </Paper>
-      
-      <StatusAlert 
+      <MessageStatusAlert 
         error={error}
         success={success}
-        onClose={clearStatus}
+        isLoading={isLoading}
       />
+      
+      <QueueSelector
+        label="Queue Manager"
+        value={selectedQueueManager}
+        options={queueManagers.map(qm => ({
+          id: qm.id,
+          name: `${qm.name} (${qm.host}:${qm.port})`
+        }))}
+        onChange={setSelectedQueueManager}
+      />
+      
+      <QueueSelector
+        label="Queue"
+        value={selectedQueue}
+        options={filteredQueues.map(q => ({
+          id: q.id,
+          name: q.name
+        }))}
+        onChange={setSelectedQueue}
+        disabled={!selectedQueueManager}
+        sx={{ mt: 2 }}
+      />
+      
+      <TextField
+        label="Message"
+        multiline
+        rows={6}
+        fullWidth
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        sx={{ mt: 2, mb: 2 }}
+        required
+      />
+      
+      <Button
+        type="submit"
+        variant="contained"
+        size="large"
+        endIcon={<SendIcon />}
+        disabled={isLoading || !selectedQueueManager || !selectedQueue || !message}
+      >
+        Send Message
+      </Button>
     </Box>
   );
 };
+```
 
+## Updated Backend Implementation
 
+### 1. DTOs (`src/main/java/com/example/mqsender/model/dto`)
 
+`QueueManagerDto.java`:
+```java
+package com.example.mqsender.model.dto;
 
-//App.tsx
-import React from 'react';
-import { CssBaseline, ThemeProvider } from '@mui/material';
-import { HomePage } from './pages/HomePage';
-import { theme } from './styles/theme';
-import { GlobalStyles } from './styles/globalStyles';
-import { AppLayout } from './pages/Layout';
+import lombok.Data;
 
-const App = () => {
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <GlobalStyles />
-      <AppLayout>
-        <HomePage />
-      </AppLayout>
-    </ThemeProvider>
-  );
-};
+@Data
+public class QueueManagerDto {
+    private String id;
+    private String name;
+    private String host;
+    private int port;
+    private String channel;
+}
+```
 
-export default App;
+`QueueDto.java`:
+```java
+package com.example.mqsender.model.dto;
 
+import lombok.Data;
 
+@Data
+public class QueueDto {
+    private String id;
+    private String name;
+    private String managerId;
+}
+```
 
-styles golbal
-import { createTheme } from '@mui/material/styles';
+`SendMessageRequest.java`:
+```java
+package com.example.mqsender.model.dto;
 
-export const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-      contrastText: '#ffffff',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-    background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h4: {
-      fontWeight: 600,
-    },
-  },
-  shape: {
-    borderRadius: 8,
-  },
-});
+import lombok.Data;
 
+@Data
+public class SendMessageRequest {
+    private String queueManagerId;
+    private String queueId;
+    private String message;
+}
+```
 
+### 2. Service Interface (`src/main/java/com/example/mqsender/service/MqService.java`)
 
-//
+```java
+package com.example.mqsender.service;
+
+import com.example.mqsender.model.dto.QueueDto;
+import com.example.mqsender.model.dto.QueueManagerDto;
+import com.example.mqsender.model.dto.SendMessageRequest;
+
+import java.util.List;
+
+public interface MqService {
+    List<QueueManagerDto> getAllQueueManagers();
+    List<QueueDto> getAllQueues();
+    List<QueueDto> getQueuesByManager(String managerId);
+    void sendMessage(SendMessageRequest request);
+}
+```
+
+### 3. Service Implementation (`src/main/java/com/example/mqsender/service/impl/MqServiceImpl.java`)
+
+```java
+package com.example.mqsender.service.impl;
+
+import com.example.mqsender.model.dto.QueueDto;
+import com.example.mqsender.model.dto.QueueManagerDto;
+import com.example.mqsender.model.dto.SendMessageRequest;
+import com.example.mqsender.model.entity.QueueEntity;
+import com.example.mqsender.model.entity.QueueManagerEntity;
+import com.example.mqsender.repository.QueueManagerRepository;
+import com.example.mqsender.repository.QueueRepository;
+import com.example.mqsender.service.MqService;
+import com.ibm.mq.jms.MQQueueConnectionFactory;
+import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.stereotype.Service;
+
+import javax.jms.JMSException;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class MqServiceImpl implements MqService {
+    
+    private final QueueManagerRepository queueManagerRepository;
+    private final QueueRepository queueRepository;
+    private final MQQueueConnectionFactory mqQueueConnectionFactory;
+    private final JmsTemplate jmsTemplate;
+    private final ModelMapper modelMapper;
+    
+    @Override
+    public List<QueueManagerDto> getAllQueueManagers() {
+        return queueManagerRepository.findAll().stream()
+            .map(this::convertToManagerDto)
+            .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<QueueDto> getAllQueues() {
+        return queueRepository.findAll().stream()
+            .map(this::convertToQueueDto)
+            .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<QueueDto> getQueuesByManager(String managerId) {
+        return queueRepository.findByManagerId(managerId).stream()
+            .map(this::convertToQueueDto)
+            .collect(Collectors.toList());
+    }
+    
+    @Override
+    public void sendMessage(SendMessageRequest request) {
+        var manager = queueManagerRepository.findById(request.getQueueManagerId())
+            .orElseThrow(() -> new RuntimeException("Queue manager not found"));
+        
+        var queue = queueRepository.findById(request.getQueueId())
+            .orElseThrow(() -> new RuntimeException("Queue not found"));
+        
+        if (!queue.getManagerId().equals(manager.getId())) {
+            throw new RuntimeException("Queue does not belong to the specified manager");
+        }
+        
+        try {
+            configureConnectionFactory(manager);
+            jmsTemplate.convertAndSend(queue.getName(), request.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send message to IBM MQ", e);
+        }
+    }
+    
+    private void configureConnectionFactory(QueueManagerEntity manager) throws JMSException {
+        mqQueueConnectionFactory.setHostName(manager.getHost());
+        mqQueueConnectionFactory.setPort(manager.getPort());
+        mqQueueConnectionFactory.setQueueManager(manager.getName());
+        mqQueueConnectionFactory.setChannel(manager.getChannel());
+    }
+    
+    private QueueManagerDto convertToManagerDto(QueueManagerEntity entity) {
+        return modelMapper.map(entity, QueueManagerDto.class);
+    }
+    
+    private QueueDto convertToQueueDto(QueueEntity entity) {
+        return modelMapper.map(entity, QueueDto.class);
+    }
+}
+```
+
+### 4. Controllers
+
+`MqManagerController.java`:
+```java
+package com.example.mqsender.controller;
+
+import com.example.mqsender.model.dto.QueueManagerDto;
+import com.example.mqsender.service.MqService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/managers")
+@RequiredArgsConstructor
+public class MqManagerController {
+    
+    private final MqService mqService;
+    
+    @GetMapping
+    public List<QueueManagerDto> getAllQueueManagers() {
+        return mqService.getAllQueueManagers();
+    }
+}
+```
+
+`MqQueueController.java`:
+```java
+package com.example.mqsender.controller;
+
+import com.example.mqsender.model.dto.QueueDto;
+import com.example.mqsender.service.MqService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/queues")
+@RequiredArgsConstructor
+public class MqQueueController {
+    
+    private final MqService mqService;
+    
+    @GetMapping
+    public List<QueueDto> getAllQueues() {
+        return mqService.getAllQueues();
+    }
+    
+    @GetMapping("/by-manager")
+    public List<QueueDto> getQueuesByManager(@RequestParam String managerId) {
+        return mqService.getQueuesByManager(managerId);
+    }
+}
+```
+
+`MqMessageController.java`:
+```java
+package com.example.mqsender.controller;
+
+import com.example.mqsender.model.dto.SendMessageRequest;
+import com.example.mqsender.service.MqService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/messages")
+@RequiredArgsConstructor
+public class MqMessageController {
+    
+    private final MqService mqService;
+    
+    @PostMapping
+    public void sendMessage(@RequestBody SendMessageRequest request) {
+        mqService.sendMessage(request);
+    }
+}
+```
+
+## Key Improvements in Modularization
+
+1. **Frontend**:
+   - Separated API layer with TypeScript interfaces
+   - Feature-based organization with custom hooks
+   - Reusable UI components
+   - Clear separation of concerns between presentation and logic
+
+2. **Backend**:
+   - Proper layered architecture (Controller -> Service -> Repository)
+   - DTOs for API communication
+   - Interface-based service layer
+   - Modular controllers by resource type
+   - ModelMapper for entity-DTO conversion
+
+3. **Both**:
+   - Consistent naming conventions
+   - Single responsibility principle applied
+   - Clear module boundaries
+   - Easier to test and maintain
+
+This modular structure makes the application more maintainable, testable, and scalable. Each component has a clear responsibility, and dependencies are properly managed through interfaces and dependency injection.
