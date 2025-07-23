@@ -1,22 +1,38 @@
-import axios from 'axios';
-import { QueueManager, Queue, SendMessageRequest } from '../types/mqTypes';
+Welcome to another byte-sized brilliance of Tech Friday.
+Today, we venture into the high-frequency heart of the financial world — Corporate Bonds Algo Trading. Imagine a space where milliseconds matter, algorithms outpace intuition, and AI reshapes how markets breathe.
 
-const api = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api',
-});
+With me today is someone who has been at the forefront of this transformation — Madhuchhand Darbha, a seasoned principal engineer who’s helped code the chaos into control in the investment banking world.
 
-export const mqApi = {
-  getQueueManagers: async (): Promise<QueueManager[]> => {
-    const response = await api.get('/managers');
-    return response.data;
-  },
-  
-  getQueues: async (): Promise<Queue[]> => {
-    const response = await api.get('/queues');
-    return response.data;
-  },
-  
-  sendMessage: async (request: SendMessageRequest): Promise<void> => {
-    await api.post('/messages', request);
-  }
-};
+Madhuchhand, it’s a pleasure to have you. But before we decode algos and bonds — would you please introduce yourself to our listeners?
+
+
+
+1. High-level Overview
+To start with, can you help our audience understand the broader domain of Corporate Bonds trading — especially in the context of how this fits into Wells Fargo’s broader markets strategy?
+
+
+2. Demystifying Jargon
+Terms like Bonds, Spreads, Yields, and Trading Latency can sound complex. Can you break these down for us — and explain how they interrelate in this use case?
+
+
+3. Use Case & Identified Inefficiency
+Now zooming in — what was the specific inefficiency or challenge you observed in the traditional flow of bond trading that led to the need for algo-driven innovation?
+
+
+4. Solution Journey
+Could you walk us through how your team arrived at the solution — and what the final AI/ML-enabled trading architecture looked like?
+
+
+5. Demo Moment (Optional Prompt)
+If possible, can you give us a sneak peek or walk-through of how the trading flow behaves with the new system in place — maybe some key metrics or outcomes?
+
+
+6. Business Impact
+Lastly, how has this solution elevated Wells Fargo’s position in the market — in terms of scale, accuracy, or speed?
+
+
+-x-x-
+
+From latency drops to logic-driven liquidity, today's discussion gave us a glimpse of how code and credit bonds are now inseparable allies.
+
+Thank you so much, Madhuchhand, for sharing this deep dive. To all our listeners, keep tuning in to Tech Friday.
