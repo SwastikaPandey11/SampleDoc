@@ -1,70 +1,119 @@
-Got it ✅ — right now the questions feel a bit “formal.” For a podcast, it should sound more like you’re having a curious conversation rather than reading a questionnaire.
-
-Here’s how we can reframe the questions more naturally, while still covering everything in each segment:
+Perfect 👌 Let’s script this Tech Friday podcast in a natural, sequential, and conversational flow so every question feels like a smooth continuation of the last.
 
 
 ---
 
-🎙️ Tech Friday Podcast Flow (Natural Style)
+🎙️ Tech Friday Podcast Script
 
-Opening
-“Hello everyone, and welcome to the Tech Friday Podcast! Today, you’re tuning into our very first episode on Innovation and Invention. Our theme is Empowering Imagination: From Ideas to Impact — A Journey Through Innovation and Invention.
+Host (You):
+“Hello everyone, and welcome to another exciting episode of Tech Friday!
+Everywhere we look today, there’s GenAI — writing emails, summarizing reports, even powering chatbots in banking. But if GenAI is today’s buzz, the real question is: what’s next? What else is shaping the financial world in 2025, and what will define the future of banking beyond GenAI?
 
-I’m your host, and with me today is our special guest, Rameshchandra Ketharaju. Ramesh, it’s great to have you here! Before we dive in, could you quickly introduce yourself to our listeners?”
+To explore these top trends in finance for 2025, we have with us Vinay Pandey, a seasoned Principal Engineer who is leading the Liquidity team and has done wonders for the organization with his innovative thinking and leadership.
+
+Vinay, welcome to the show!”
 
 
 ---
 
-Segment 1: Personal Journey & Mindset
+Q1 – Why these trends now?
 
 Host:
-“You’ve had such an inspiring journey, Ramesh. What first drew you towards innovation and invention, and what keeps you going even after so many applications and contributions?”
+“Let’s start at the very beginning. Why are these trends even emerging in the first place? What’s driving the need for them in finance today?”
+
+➡️ (Vinay explains about AI imperatives & risks, new frontiers of computing, and human–machine synergy.)
 
 
 ---
 
-Segment 2: Innovation as a Strategy
+Q2 – Shift to Agentic AI
 
 Host:
-“Now, when most people hear innovation, they think of cool new gadgets or fresh ideas. But you look at it more strategically. How do you see innovation shaping industries like financial services? And when you bring in approaches like Bridge to Breakthrough or Future Back Ideation, how do they actually help connect today’s ideas to tomorrow’s strategy?”
+“That brings us to the first trend itself. GenAI has already become mainstream — but now we’re hearing about a shift to Agentic AI. Why is this gaining so much traction in banking, and how exactly is it changing the way financial institutions operate?”
+
+➡️ (Vinay explains Agentic AI, real-world use cases in banks, and the ‘agency gap’ between human agents and agentic AI.)
 
 
 ---
 
-Segment 3: Inventor Toolkit & Methodologies
+Q3 – AI Governance
 
 Host:
-“That makes so much sense. But of course, ideas alone don’t get very far without the right methods. From your own experience, what are some of the key tools, habits, or mindsets that really help inventors take an idea and make it practical? And how do you personally overcome the barriers that usually get in the way?”
+“And as you said, this ‘agency gap’ opens up some big challenges. Which naturally brings us to governance. With AI systems making more autonomous decisions, how do you see AI governance coming into the picture, and why is it such a hot topic in 2025?”
+
+➡️ (Vinay talks about governance frameworks, compliance, regulation, and responsible AI in banking.)
 
 
 ---
 
-Segment 4: Organizational Impact & Culture
+Q4 – Disinformation Security
 
 Host:
-“Now let’s zoom out a bit — no inventor works in isolation. How do you see organizations creating a culture where innovation can thrive? And are there ways companies can balance technology, diversity, and collaboration so that innovation goes beyond just products and actually changes the way we work?”
+“Governance also ties into another issue — information integrity. With AI generating content at scale, both good and bad, how do we deal with the spread of disinformation? In finance especially, how do we know what can be trusted?”
+
+➡️ (Vinay explains disinformation security, risks for markets and trust, and how banks are responding.)
 
 
 ---
 
-Segment 5: Future Outlook & Advice
+Q5 – Post-Quantum Cryptography
 
 Host:
-“Finally, looking ahead — how do you see the future of innovation evolving? And for all the young professionals listening today who dream of becoming inventors, what’s the one piece of advice you’d share with them?”
+“Shifting gears a bit — let’s look ahead to the new frontiers of computing. Quantum computing is no longer just research, it’s a real threat and opportunity. What’s your take on post-quantum cryptography, and why should banks care about it now?”
+
+➡️ (Vinay explains how quantum could break today’s encryption and how banks are preparing.)
 
 
 ---
 
-Closing
+Q6 – Hybrid Computing
 
-“Ramesh, this has been such an insightful conversation. From imagination to real-world impact, you’ve really shown us how innovation is a journey, not just a buzzword.
+Host:
+“And as we prepare for a quantum future, we keep hearing about hybrid computing — mixing classical with quantum, or cloud with edge. Why is hybrid computing trending, and what role do you see it playing in finance?”
 
-To all our listeners — thank you for joining us on this very first Tech Friday Podcast. We’ll be back with more conversations on technology, creativity, and the future. Until then, keep imagining, keep experimenting, and keep innovating. See you next Friday!”
+➡️ (Vinay explains hybrid approaches and early experiments in banks.)
 
 
 ---
 
-👉 This way the questions feel curious and conversational, not like reading from a sheet, while still covering every segment’s sub-questions.
+Q7 – Real-world Use Cases in New Frontiers
 
-Do you want me to now polish this into a podcast-ready script (like how you’d actually speak it, with natural pauses and transitions)?
+Host:
+“So if we combine all these ideas — quantum, hybrid, smarter architectures — what are some real-world use cases? Where do you see the most exciting applications emerging?”
+
+➡️ (Vinay talks about ambient invisible intelligence, background intelligence improving fraud detection, liquidity risk management, etc.)
+
+
+---
+
+Q8 – Polyfunctional Robots
+
+Host:
+“Now moving into human–machine synergy. Robots in finance used to mean ATMs, but we’re now talking about polyfunctional robots that can handle multiple tasks. Why are they trending in 2025, and how might banks actually use them?”
+
+➡️ (Vinay explains examples of polyfunctional robots in operations, customer service, branch automation, etc.)
+
+
+---
+
+Q9 – Neurological Enhancement
+
+Host:
+“And finally, something that almost feels like science fiction — neurological enhancement. Why is this even part of the finance conversation, and what kind of early use cases or possibilities are you seeing?”
+
+➡️ (Vinay explains neurological enhancement, decision augmentation, cognitive assistance for financial professionals.)
+
+
+---
+
+🎙️ Closing
+
+Host:
+“Vinay, this has been such an eye-opening conversation. From the rise of Agentic AI and the challenges of governance, to the futuristic frontiers of quantum, hybrid computing, and even human–machine synergy — it’s clear that finance in 2025 is about so much more than just money. It’s about reimagining the very foundations of trust, intelligence, and human potential.
+
+Thank you so much for joining us today, and to all our listeners — thank you for tuning in to Tech Friday. Stay curious, stay future-ready, and we’ll see you in the next episode!”
+
+
+
+
 
