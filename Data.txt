@@ -54,3 +54,126 @@
     ]
   }
 ]
+
+
+
+/////
+
+
+
+
+// src/components/IntentCard.jsx
+import React, { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  Collapse,
+  Box,
+  Stepper,
+  Step,
+  StepLabel,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+
+const IntentCard = ({ intent }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  // Stop at first failure
+  const cutoffIndex = intent.logs.findIndex((log) => log.success === false);
+
+  const visibleLogs =
+    cutoffIndex === -1
+      ? intent.logs.filter((log) => log.step !== "offer")
+      : intent.logs.slice(0, cutoffIndex + 1);
+
+  const diaryLogs = intent.logs.filter(
+    (log) => log.step === "offer" && log.success === true
+  );
+
+  return (
+    <Card sx={{ mb: 3, borderRadius: 3, boxShadow: 3, bgcolor: "#f9fbff" }}>
+      <CardHeader
+        title={intent.company_name}
+        action={
+          expanded ? (
+            <ExpandLessIcon
+              onClick={() => setExpanded(false)}
+              style={{ cursor: "pointer" }}
+            />
+          ) : (
+            <ExpandMoreIcon
+              onClick={() => setExpanded(true)}
+              style={{ cursor: "pointer" }}
+            />
+          )
+        }
+        sx={{ bgcolor: "#e3f2fd" }}
+      />
+      <Collapse in={expanded} timeout="auto" unmountOnExit>
+        <CardContent>
+          {/* Progress Timeline */}
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Progress Status
+            </Typography>
+            <Stepper orientation="vertical">
+              {visibleLogs.map((log, index) => (
+                <Step key={index} active>
+                  <StepLabel
+                    icon={
+                      log.success ? (
+                        <CheckCircleIcon sx={{ color: "green" }} />
+                      ) : (
+                        <CancelIcon sx={{ color: "red" }} />
+                      )
+                    }
+                  >
+                    <Typography variant="subtitle1">{log.step}</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {new Date(log.timestamp).toLocaleString()}
+                    </Typography>
+                  </StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </Box>
+
+          {/* Diary Section */}
+          {diaryLogs.length > 0 && (
+            <Box
+              sx={{
+                maxHeight: 200,
+                overflowY: "auto",
+                p: 2,
+                border: "1px solid #ccc",
+                borderRadius: 2,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Offer Details
+              </Typography>
+              {diaryLogs.map((log, idx) => (
+                <Typography
+                  key={idx}
+                  variant="body1"
+                  sx={{ whiteSpace: "pre-wrap", mb: 1 }}
+                >
+                  {log.message}
+                </Typography>
+              ))}
+            </Box>
+          )}
+        </CardContent>
+      </Collapse>
+    </Card>
+  );
+};
+
+export default IntentCard;
+
