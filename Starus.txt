@@ -1,33 +1,582 @@
-// src/pages/LoginPage.jsx
-import { useState } from "react";
-import { validateLogin } from "../utils/auth";
-import { useNavigate } from "react-router-dom";
-import { Box, TextField, Button, Typography } from "@mui/material";
+# FinBridgeAI — Frontend (Vite + React + MUI)
 
-export default function LoginPage() {
-  const [user, setUser] = useState("");
-  const [pass, setPass] = useState("");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
+This document contains a complete, modular React + MUI frontend that implements your requirements:
 
-  const handleLogin = () => {
-    const valid = validateLogin(user, pass);
-    if (!valid) {
-      setError("Invalid credentials");
-      return;
+* Login authentication from a `banks.json` file (demo only — not secure for production).
+* Navbar with live current time and `FinBridgeAI` logo.
+* Polling-based listener for bank-specific endpoints (configured in `banks.json`).
+* Display of intents as cards; expanded view shows logs in progress format. Logs with `step: "offer"` are shown in a scrollable diary area.
+* Bluish, trust-focused theme and additional CSS to make it attractive.
+
+---
+
+## Project structure (what's included here)
+
+```
+finbridge-frontend/
+├─ index.html
+├─ package.json
+├─ vite.config.js
+├─ src/
+│  ├─ main.jsx
+│  ├─ App.jsx
+│  ├─ theme.js
+│  ├─ styles.css
+│  ├─ data/
+│  │   └─ banks.json
+│  ├─ services/
+│  │   ├─ auth.js
+│  │   └─ polling.js
+│  └─ components/
+│      ├─ Login.jsx
+│      ├─ Navbar.jsx
+│      ├─ Dashboard.jsx
+│      ├─ IntentCard.jsx
+│      └─ Diary.jsx
+└─ README.md
+```
+
+---
+
+## `src/data/banks.json` (DEMO credentials & endpoints)
+
+```json
+[
+  {
+    "name": "alpha-bank",
+    "displayName": "Alpha Bank",
+    "username": "alpha_user",
+    "password": "alphaPass123",
+    "endpoint": "http://localhost:8001/intents"
+  },
+  {
+    "name": "beta-bank",
+    "displayName": "Beta Bank",
+    "username": "beta_user",
+    "password": "betaPass456",
+    "endpoint": "http://localhost:8002/intents"
+  },
+  {
+    "name": "gamma-bank",
+    "displayName": "Gamma Bank",
+    "username": "gamma_user",
+    "password": "gammaPass789",
+    "endpoint": "http://localhost:8003/intents"
+  }
+]
+```
+
+> **Security note:** This JSON is only for demonstration. Do **not** store passwords or secrets in client-side files in real apps.
+
+---
+
+## Key files (copy into your `src/` directory)
+
+### `src/theme.js`
+
+```js
+import { createTheme } from '@mui/material/styles';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#0b63ce' // bluish primary
+    },
+    secondary: {
+      main: '#81d4fa'
     }
-    sessionStorage.setItem("bank", valid.bank);
-    sessionStorage.setItem("loginTime", Date.now());
-    navigate("/dashboard");
+  },
+  typography: {
+    fontFamily: 'Inter, Roboto, Arial'
+  }
+});
+
+export default theme;
+```
+
+### `src/services/auth.js`
+
+```js
+import banks from '../data/banks.json';
+
+export function findBank(name) {
+  return banks.find(b => b.name === name);
+}
+
+export function login(bankName, username, password) {
+  const bank = banks.find(b => b.name === bankName);
+  if (!bank) throw new Error('Bank not found');
+  if (bank.username === username && bank.password === password) {
+    // Return minimal session info
+    return {
+      name: bank.name,
+      displayName: bank.displayName,
+      endpoint: bank.endpoint
+    };
+  }
+  throw new Error('Invalid credentials');
+}
+```
+
+### `src/services/polling.js` (custom hook)
+
+```js
+import { useState, useEffect, useRef } from 'react';
+
+export function usePolling(endpoint, intervalMs = 4000) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    let timerId = null;
+
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const res = await fetch(endpoint, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (mounted.current) {
+          setData(json);
+          setError(null);
+        }
+      } catch (err) {
+        if (mounted.current) {
+          setError(err.message);
+          // keep data as-is (could be null or previous)
+        }
+      } finally {
+        if (mounted.current) setLoading(false);
+      }
+    }
+
+    // initial fetch
+    fetchData();
+    timerId = setInterval(fetchData, intervalMs);
+
+    return () => {
+      mounted.current = false;
+      clearInterval(timerId);
+    };
+  }, [endpoint, intervalMs]);
+
+  return { data, loading, error };
+}
+```
+
+### `src/components/Login.jsx`
+
+```jsx
+import React, { useState } from 'react';
+import { Box, Button, TextField, MenuItem, Paper, Typography } from '@mui/material';
+import banks from '../data/banks.json';
+import { login } from '../services/auth';
+
+export default function Login({ onSuccess }) {
+  const [bank, setBank] = useState(banks[0].name);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const session = login(bank, username.trim(), password);
+      setError(null);
+      onSuccess(session);
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 8, mx: "auto", width: 300 }}>
-      <Typography variant="h5" align="center">FinBridgeAI Login</Typography>
-      <TextField label="Username" value={user} onChange={e => setUser(e.target.value)} />
-      <TextField label="Password" type="password" value={pass} onChange={e => setPass(e.target.value)} />
-      {error && <Typography color="error">{error}</Typography>}
-      <Button variant="contained" onClick={handleLogin}>Login</Button>
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+      <Paper elevation={6} sx={{ p: 4, width: 420 }}>
+        <Typography variant="h5" gutterBottom>FinBridgeAI — Login</Typography>
+        <form onSubmit={handleSubmit}>
+          <TextField
+            select
+            label="Select Bank"
+            value={bank}
+            onChange={(e) => setBank(e.target.value)}
+            fullWidth
+            margin="normal"
+          >
+            {banks.map((b) => (
+              <MenuItem key={b.name} value={b.name}>{b.displayName}</MenuItem>
+            ))}
+          </TextField>
+
+          <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth margin="normal" />
+          <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} fullWidth margin="normal" />
+
+          {error && <Typography color="error" sx={{ mt: 1 }}>{error}</Typography>}
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+            <Button variant="outlined" onClick={() => { setUsername(''); setPassword(''); }}>Clear</Button>
+            <Button variant="contained" type="submit">Login</Button>
+          </Box>
+        </form>
+      </Paper>
     </Box>
   );
 }
+```
+
+### `src/components/Navbar.jsx`
+
+```jsx
+import React, { useEffect, useState } from 'react';
+import { AppBar, Toolbar, Typography, Box, Avatar, IconButton } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
+
+export default function Navbar({ session, onLogout }) {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <AppBar position="static" color="primary" sx={{ mb: 3 }}>
+      <Toolbar>
+        <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+          <Avatar sx={{ bgcolor: 'white', color: 'primary.main', mr: 1 }}>F</Avatar>
+          <Typography variant="h6">FinBridgeAI</Typography>
+        </Box>
+
+        <Box sx={{ flex: 1 }} />
+
+        <Typography sx={{ mr: 3, opacity: 0.95 }}>{time.toLocaleString()}</Typography>
+
+        {session && (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Typography sx={{ mr: 1 }}>{session.displayName}</Typography>
+            <IconButton onClick={onLogout} color="inherit"><LogoutIcon /></IconButton>
+          </Box>
+        )}
+
+      </Toolbar>
+    </AppBar>
+  );
+}
+```
+
+### `src/components/Diary.jsx` (scrollable offers area)
+
+```jsx
+import React from 'react';
+import { Box, Typography, Paper } from '@mui/material';
+
+export default function Diary({ offers }) {
+  if (!offers || offers.length === 0) return null;
+
+  return (
+    <Paper elevation={1} sx={{ p: 2, mt: 2 }}>
+      <Typography variant="subtitle1" sx={{ mb: 1 }}>Offers / Diary</Typography>
+      <Box sx={{ maxHeight: 220, overflowY: 'auto' }} className="diary-scroll">
+        {offers.map((o, idx) => (
+          <Box key={idx} sx={{ mb: 2, p: 2, bgcolor: '#f7fbff', borderRadius: 1 }}>
+            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{o.message}</Typography>
+            <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.6 }}>{o.timestamp}</Typography>
+          </Box>
+        ))}
+      </Box>
+    </Paper>
+  );
+}
+```
+
+### `src/components/IntentCard.jsx`
+
+```jsx
+import React from 'react';
+import {
+  Card, CardHeader, CardContent, Box, Typography, Divider, List, ListItem, ListItemAvatar, Avatar
+} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import Collapse from '@mui/material/Collapse';
+
+export default function IntentCard({ intent }) {
+  const [open, setOpen] = React.useState(false);
+  const progressLogs = (intent.logs || []).filter(l => l.step !== 'offer');
+  const offerLogs = (intent.logs || []).filter(l => l.step === 'offer');
+
+  return (
+    <Card sx={{ mb: 2 }}>
+      <CardHeader
+        title={intent.company_name}
+        subheader={`Intent: ${intent.intent_id}`}
+        action={<ExpandMoreIcon onClick={() => setOpen(o => !o)} sx={{ cursor: 'pointer', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .2s' }} />}
+      />
+
+      <Collapse in={open} timeout="auto" unmountOnExit>
+        <CardContent>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>Progress</Typography>
+          <List>
+            {progressLogs.map((log, idx) => (
+              <ListItem key={idx} alignItems="flex-start">
+                <ListItemAvatar>
+                  <Avatar sx={{ bgcolor: log.success ? 'green' : 'red', width: 12, height: 12 }} />
+                </ListItemAvatar>
+                <Box sx={{ ml: 1 }}>
+                  <Typography variant="body1">{log.step}</Typography>
+                  <Typography variant="caption" sx={{ opacity: 0.6 }}>{log.timestamp}</Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>{log.message}</Typography>
+                </Box>
+              </ListItem>
+            ))}
+
+            {progressLogs.length === 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
+                <Typography variant="body2" sx={{ opacity: 0.8 }}>No progress logs yet.</Typography>
+              </Box>
+            )}
+          </List>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Diary / Offers */}
+          {offerLogs.length > 0 && (
+            <Box>
+              <Typography variant="subtitle2">Offers / Details</Typography>
+              <Box sx={{ maxHeight: 220, overflowY: 'auto', mt: 1 }} className="diary-scroll">
+                {offerLogs.map((o, i) => (
+                  <Box key={i} sx={{ p: 2, mb: 1, bgcolor: '#fbfdff', borderRadius: 1 }}>
+                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{o.message}</Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.6 }}>{o.timestamp}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          )}
+        </CardContent>
+      </Collapse>
+    </Card>
+  );
+}
+```
+
+### `src/components/Dashboard.jsx`
+
+```jsx
+import React from 'react';
+import { Box, Typography, CircularProgress, Container } from '@mui/material';
+import { usePolling } from '../services/polling';
+import IntentCard from './IntentCard';
+
+export default function Dashboard({ session }) {
+  const endpoint = session.endpoint;
+  const { data, loading, error } = usePolling(endpoint, 4000);
+
+  const hasIntents = Array.isArray(data) && data.length > 0;
+
+  return (
+    <Container>
+      {loading && !hasIntents && (
+        <Box sx={{ textAlign: 'center', mt: 8 }}>
+          <CircularProgress />
+          <Typography variant="h6" sx={{ mt: 2 }}>Decisioning in progress...</Typography>
+        </Box>
+      )}
+
+      {error && !hasIntents && (
+        <Box sx={{ textAlign: 'center', mt: 4 }}>
+          <Typography color="error">Error: {error}</Typography>
+          <Typography sx={{ mt: 1 }}>Decisioning in progress or endpoint unreachable.</Typography>
+        </Box>
+      )}
+
+      {hasIntents && (
+        <Box sx={{ mt: 2 }}>
+          {data.map((intent, idx) => (
+            <IntentCard key={`${intent.intent_id}-${idx}`} intent={intent} />
+          ))}
+        </Box>
+      )}
+    </Container>
+  );
+}
+```
+
+### `src/App.jsx`
+
+```jsx
+import React, { useState, useEffect } from 'react';
+import Navbar from './components/Navbar';
+import Login from './components/Login';
+import Dashboard from './components/Dashboard';
+
+export default function App() {
+  const [session, setSession] = useState(() => {
+    try {
+      const s = localStorage.getItem('session');
+      return s ? JSON.parse(s) : null;
+    } catch (e) { return null; }
+  });
+
+  useEffect(() => {
+    if (session) localStorage.setItem('session', JSON.stringify(session));
+    else localStorage.removeItem('session');
+  }, [session]);
+
+  const handleLogout = () => setSession(null);
+
+  return (
+    <div>
+      <Navbar session={session} onLogout={handleLogout} />
+      {session ? (
+        <Dashboard session={session} />
+      ) : (
+        <Login onSuccess={(s) => setSession(s)} />
+      )}
+    </div>
+  );
+}
+```
+
+### `src/main.jsx`
+
+```jsx
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
+import './styles.css';
+
+createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <App />
+    </ThemeProvider>
+  </React.StrictMode>
+);
+```
+
+### `index.html` (root)
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FinBridgeAI — Frontend</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+```
+
+### `src/styles.css`
+
+```css
+body {
+  background: linear-gradient(180deg, #f4f9ff 0%, #ffffff 100%);
+}
+
+.diary-scroll {
+  scrollbar-width: thin;
+}
+
+/* Webkit scrollbar styling */
+.diary-scroll::-webkit-scrollbar { width: 8px; }
+.diary-scroll::-webkit-scrollbar-track { background: transparent; }
+.diary-scroll::-webkit-scrollbar-thumb { background: rgba(11,99,206,0.25); border-radius: 4px; }
+
+/* Slight card uplift */
+.MuiPaper-root {
+  border-radius: 12px;
+}
+```
+
+---
+
+## How to create the project (step-by-step with Vite)
+
+1. **Create the Vite app**
+
+```bash
+npm create vite@latest finbridge-frontend -- --template react
+cd finbridge-frontend
+```
+
+2. **Install dependencies**
+
+```bash
+npm install @mui/material @mui/icons-material @emotion/react @emotion/styled
+# optional: axios
+npm install axios
+```
+
+3. **Copy files**
+
+* Replace the generated `src` with the `src/` contents above (or add the new files).
+* Add `src/data/banks.json` with the sample banks.
+
+4. **Run dev server**
+
+```bash
+npm run dev
+```
+
+5. **Open app**
+
+Navigate to `http://localhost:5173` (Vite default) and you should see the login UI.
+
+---
+
+## Tips, customization & production notes
+
+* **Polling interval**: change the default `4000` ms in `usePolling` to adjust how often the frontend polls the endpoint.
+* **CORS**: your backend endpoints (e.g. `http://localhost:8001/intents`) must allow CORS for the frontend origin.
+* **Security**: storing usernames/passwords in a client-side JSON file is only acceptable for demos. For production:
+
+  * Authenticate users server-side.
+  * Use tokens (JWT or session cookies).
+  * Keep secret configuration on the server or environment variables.
+* **Mocking backends**: for quick local testing, use a simple Express server or `json-server` that returns the array-of-intents JSON structure shown in your prompt.
+
+### Sample mock response structure
+
+```json
+[
+  {
+    "company_name": "Alpha Bank",
+    "intent_id": "intent-123",
+    "logs": [
+      { "message": "Start decisioning", "success": true, "step": "start", "timestamp": "2025-09-20T10:00:00Z" },
+      { "message": "Checked balance", "success": true, "step": "balance-check", "timestamp": "2025-09-20T10:00:02Z" },
+      { "message": "Offer: 12 month loan at 8% APR... (long text)", "success": true, "step": "offer", "timestamp": "2025-09-20T10:00:05Z" }
+    ]
+  }
+]
+```
+
+---
+
+## What I included for you
+
+* Full modular code for the frontend (components, services, theme, styles, sample banks.json)
+* Vite setup steps and commands
+* Notes on security, CORS, polling, and mocking backends
+
+---
+
+If you'd like, I can:
+
+* Provide a small mock Express server file to simulate the endpoints (one per bank).
+* Convert the project into TypeScript.
+* Add animations/Framer Motion touches for nicer card expansion.
+* Wire this to a real authentication flow (showing how to move the `banks.json` to a real server).
+
+Tell me which of the above you'd like next and I'll add it.
