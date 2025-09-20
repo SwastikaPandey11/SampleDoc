@@ -1,10 +1,33 @@
-I want to create a frontend with react and mui  which will perform the following action:
- 1.login authentication and screen timeout after 20 minutes----->this will be done with the help of a json object which will store the user and password(BANK NAME (three bank names as alpha bank,beta bank and gamma-bank AND RANDOM PASWORD).I want to check if the entered user name and password is there in that json file or not.
+// src/pages/LoginPage.jsx
+import { useState } from "react";
+import { validateLogin } from "../utils/auth";
+import { useNavigate } from "react-router-dom";
+import { Box, TextField, Button, Typography } from "@mui/material";
 
- 2.User will enter where navbar will be there which will show the current time and logo will be there for FinBridgeAI 
+export default function LoginPage() {
+  const [user, setUser] = useState("");
+  const [pass, setPass] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-3.I have a backend system where decisioning and reasoning is happening.it is storing all the logs in a ./logs folder and that is being send to frontend using server-sent events. I have to show these logs as the user enter using the correct credential in real-time. log display format: it should display these logs as if checks are being completed First it should show that <bankName> has entered into the chat. if logs are there in the backend then it should show that pre-checks are completed which is :
+  const handleLogin = () => {
+    const valid = validateLogin(user, pass);
+    if (!valid) {
+      setError("Invalid credentials");
+      return;
+    }
+    sessionStorage.setItem("bank", valid.bank);
+    sessionStorage.setItem("loginTime", Date.now());
+    navigate("/dashboard");
+  };
 
- 1.the message from the company follows the wells fargo protocol and it is in correct schema. 2.The digital signature send by the company is also verified successfully. then it will start showing all the logs ,the logs are basically the progress that decision is happening which the given data.it should be shown as if we are tracking the status of completion. and once we recieve ,decision is completed successfuly,backend will share a offer payload that has to be displayed to in a very user friednly and creative manner(preferabbly as a mark down format adn the offer will be a long payload).the offer schema will have the following details: a quote with terms like interest rate, repayment schedule,(amount approved, repayment period etc.) and ESG (Environmental, Social, Governance) impact,Token identifying the bank.This ESG means it will show a clear, human-readable ESG summary. Make the frontend very attractive and make the thme a little bluish if possible to establish the factor of trust.Add css and make it intersting.Give step by step procedure for making the app using vite and then modulirizing the code to make it very organised and explain for every page what it is exaclty doing
-
-offer format:
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 8, mx: "auto", width: 300 }}>
+      <Typography variant="h5" align="center">FinBridgeAI Login</Typography>
+      <TextField label="Username" value={user} onChange={e => setUser(e.target.value)} />
+      <TextField label="Password" type="password" value={pass} onChange={e => setPass(e.target.value)} />
+      {error && <Typography color="error">{error}</Typography>}
+      <Button variant="contained" onClick={handleLogin}>Login</Button>
+    </Box>
+  );
+}
