@@ -580,3 +580,118 @@ If you'd like, I can:
 * Wire this to a real authentication flow (showing how to move the `banks.json` to a real server).
 
 Tell me which of the above you'd like next and I'll add it.
+
+
+
+
+# FinBridgeAI — Frontend (Vite + React + MUI)
+
+Here are the three specific files you asked for:
+
+---
+
+### `src/components/Dashboard.jsx`
+
+```jsx
+import React from 'react';
+import { Box, Typography, CircularProgress, Container } from '@mui/material';
+import { usePolling } from '../services/polling';
+import IntentCard from './IntentCard';
+
+export default function Dashboard({ session }) {
+  const endpoint = session.endpoint;
+  const { data, loading, error } = usePolling(endpoint, 4000);
+
+  const hasIntents = Array.isArray(data) && data.length > 0;
+
+  return (
+    <Container>
+      {loading && !hasIntents && (
+        <Box sx={{ textAlign: 'center', mt: 8 }}>
+          <CircularProgress />
+          <Typography variant="h6" sx={{ mt: 2 }}>Decisioning in progress...</Typography>
+        </Box>
+      )}
+
+      {error && !hasIntents && (
+        <Box sx={{ textAlign: 'center', mt: 4 }}>
+          <Typography color="error">Error: {error}</Typography>
+          <Typography sx={{ mt: 1 }}>Decisioning in progress or endpoint unreachable.</Typography>
+        </Box>
+      )}
+
+      {hasIntents && (
+        <Box sx={{ mt: 2 }}>
+          {data.map((intent, idx) => (
+            <IntentCard key={`${intent.intent_id}-${idx}`} intent={intent} />
+          ))}
+        </Box>
+      )}
+    </Container>
+  );
+}
+```
+
+---
+
+### `src/App.jsx`
+
+```jsx
+import React, { useState, useEffect } from 'react';
+import Navbar from './components/Navbar';
+import Login from './components/Login';
+import Dashboard from './components/Dashboard';
+
+export default function App() {
+  const [session, setSession] = useState(() => {
+    try {
+      const s = localStorage.getItem('session');
+      return s ? JSON.parse(s) : null;
+    } catch (e) { return null; }
+  });
+
+  useEffect(() => {
+    if (session) localStorage.setItem('session', JSON.stringify(session));
+    else localStorage.removeItem('session');
+  }, [session]);
+
+  const handleLogout = () => setSession(null);
+
+  return (
+    <div>
+      <Navbar session={session} onLogout={handleLogout} />
+      {session ? (
+        <Dashboard session={session} />
+      ) : (
+        <Login onSuccess={(s) => setSession(s)} />
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+### `src/main.jsx`
+
+```jsx
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
+import './styles.css';
+
+createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <App />
+    </ThemeProvider>
+  </React.StrictMode>
+);
+```
+
+---
+
